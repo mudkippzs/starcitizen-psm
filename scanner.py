@@ -1,5 +1,6 @@
-from io import BytesIO, StringIO
 from bs4 import BeautifulSoup as BS4
+from io import BytesIO, StringIO
+from termcolor import colored
 from urllib3.exceptions import HTTPError
 
 import certifi
@@ -15,21 +16,24 @@ class Scanner:
 	#Setup urllib3 PoolManager
 	http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',ca_certs=certifi.where())
 	ship_list = []
+	watch_list = ['Caterpillar','Prospector']
 
 	def set(self, attr, val):
 		self.attrs[attr] = val
 		return
 
 	def check_url(self):
+		responses = []
 		if self.attrs["url"]:
-			response = self.http.request('GET', self.attrs["url"])
-			return response
+			for url in self.attrs["url"]:
+				responses.append(self.http.request('GET', url))
+			return responses
 		else:
-			print("Error: No URL set.")
+			print("Error: No URLs set.")
 			exit()
 	
-	def create_http_request(self):
-		return self.http.request('GET', self.attrs["url"])
+	def create_http_request(self, url):
+		return self.http.request('GET', url)
 
 	def get_compressed_stream(self, data):
 		return BytesIO(data)
@@ -38,59 +42,73 @@ class Scanner:
 		return BS4(compressedData, "html.parser")
 
 	def get_html(self):
+		soups = []
 		if self.check_url():
-			raw_html = None
-			try:				
-				response = self.create_http_request()
-			except (HTTPError) as error:
-				logging.exception("Data of %s not retrieved because %s\nURL: %s", error, url)
-			except timeout:
-				logging.exception("Socket timed out - URL %s", url)
-				raise
-			else:
-				logging.info("Access successful.")
-			# End headers.
-			# Send our request.
-			# Uncompress the response and if its nonsense it will throw an exception, we don"t care about anything but a successful response
-			try:
-				compressedStream = self.get_compressed_stream(response.data)
-				#gzipper = gzip.GzipFile(fileobj=compressedStream)
-				#uncompressedStream = gzipper.read()
-				soup = self.create_soup_object(compressedStream)
-				if soup and isinstance(soup, BS4):
-					return soup
+			for url in self.attrs["url"]:
+				try:				
+					response = self.create_http_request(url)
+				except (HTTPError) as error:
+					logging.exception("Data of %s not retrieved because %s\nURL: %s", error, url)
+				except timeout:
+					logging.exception("Socket timed out - URL %s", url)
+					raise
 				else:
-					logging.error("No soup for you!")
-					return False
-			except (IOError, AttributeError) as e:
-				logging.exception(response)
-				logging.exception("Exception raised: " + str(e))
-				pass # Only triggers in tests and odd circumstances	
+					logging.info("Access successful.")
+				# End headers.
+				# Send our request.
+				# Uncompress the response and if its nonsense it will throw an exception, we don"t care about anything but a successful response
+				try:
+					compressedStream = self.get_compressed_stream(response.data)
+					#gzipper = gzip.GzipFile(fileobj=compressedStream)
+					#uncompressedStream = gzipper.read()
+					soup = self.create_soup_object(compressedStream)
+					if soup and isinstance(soup, BS4):
+						soups.append(soup)
+					else:
+						logging.error("No soup for you!")						
+				except (IOError, AttributeError) as e:
+					logging.exception(response)
+					logging.exception("Exception raised: " + str(e))
+					pass # Only triggers in tests and odd circumstances	
 
-			return raw_html
+			return soups
 		else:
 			return False
 
 	def get_ship_list(self):
 
 		if self.check_url():
-			html = self.get_html()
-			ship_names = self.extract_ships(html)
+			pages = self.get_html()
+			ship_names = self.extract_ships(pages)
 			return ship_names
 		else:
 			return False
 
-	def extract_ships(self, html):
-		if isinstance(html, BS4):
-			ship_blocks = html.find_all("div",{"class": "product-item"})			
-			for ship in ship_blocks:
-				try:					
-					name = ship.find("div",{"class": "title"}).text.strip()
-					price = ship.find("div",{"class": "price"}).text.strip()
-					state = ship.find("span",{"class": "state"}).text.strip()					
-					self.ship_list.append({'name': name, 'price': price, 'state': state})
-				except:
-					raise
+	def format_state(self, state):
+		if 'Sold out' in state:
+			return colored(state, 'red', attrs=['blink'])
+		if 'In stock' in state:
+			return colored(state, 'green', attrs=['bold'])
+
+	def format_watched_ship(self, name):
+		for ship in self.watch_list:
+			if ship in self.watch_list:
+				return colored(name, 'cyan', attrs=['blink','bold'])
+		return name
+
+	def extract_ships(self, pages):
+		for html in pages:
+			if isinstance(html, BS4):
+				ship_blocks = html.find_all("div",{"class": "product-item"})			
+				for ship in ship_blocks:
+					try:					
+						name = ship.find("div",{"class": "title"}).text.strip()
+						price = ship.find("div",{"class": "price"}).text.strip()
+						state = ship.find("span",{"class": "state"}).text.strip()
+						formatted_state = self.format_state(state)
+						self.ship_list.append({'name': name, 'price': price, 'state': state})
+					except:
+						raise
 
 		return self.ship_list
 

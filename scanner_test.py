@@ -2,12 +2,14 @@ import scanner
 import unittest
 from unittest.mock import patch
 
-
 class ScannerTestcase(unittest.TestCase):
 
 	def setUp(self):
 		super(ScannerTestcase)
-		self.testURL = "https://robertsspaceindustries.com/pledge/extras?product_id=72"		
+		self.testURL = ["https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=1",
+		"https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=2",
+		"https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=3",
+		"https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=4"],
 
 	def test_scanner_import(self):
 		self.assertTrue(scanner)
@@ -26,7 +28,8 @@ class ScannerTestcase(unittest.TestCase):
 		testScanner = scanner.Scanner()
 		testScanner.set("url", self.testURL)
 		expected_response_code = 200
-		self.assertEqual(testScanner.check_url(), expected_response_code)
+		for status in testScanner.check_url():
+			self.assertEqual(status, expected_response_code)
 
 	@patch.object(scanner.Scanner, 'get_compressed_stream', return_value="<html><body></body></html>")
 	def test_scanner_get_html(self, mockCompressedStream):

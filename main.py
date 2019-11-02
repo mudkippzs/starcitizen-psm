@@ -1,3 +1,6 @@
+from PySide2.QtWidgets import (QApplication, QLabel, QPushButton,
+                               QVBoxLayout, QWidget)
+from sc_widget import StarCitizenShipPrices
 import scanner
 import sys
 import time
@@ -21,21 +24,15 @@ def main():
 		"https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=2",
 		"https://robertsspaceindustries.com/pledge/extras?product_id=72&sort=price_asc&search=&itemType=skus&storefront=pledge&type=extras&page=3"]
 		)
-	
-	while True:		
-		update()
-		time.sleep(3600)				
 
-def update():
-	now = time.ctime()
-	print("\n======================\nShip Price Update (%s)\n======================\n\n" % (now))	
-	sys.stdout.flush()
-	SC_Scanner.print_ship_list()
-	sys.stdout.flush()
-	print("\n\n\n")
+	app = QApplication(sys.argv)
+	widget = StarCitizenShipPrices(SC_Scanner)
+	widget.resize(600, 1400)
+	widget.setWindowTitle("Star Citizen Ship Prices")
+	widget.show()
+	sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
-	motd()
-	sys.stdout.flush()
+
+if __name__ == '__main__':		
 	main()

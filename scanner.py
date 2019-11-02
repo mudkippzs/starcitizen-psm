@@ -29,8 +29,7 @@ class Scanner:
 				responses.append(self.http.request('GET', url))
 			return responses
 		else:
-			print("Error: No URLs set.")
-			exit()
+			return False
 	
 	def create_http_request(self, url):
 		return self.http.request('GET', url)
@@ -54,13 +53,8 @@ class Scanner:
 					raise
 				else:
 					logging.info("Access successful.")
-				# End headers.
-				# Send our request.
-				# Uncompress the response and if its nonsense it will throw an exception, we don"t care about anything but a successful response
 				try:
 					compressedStream = self.get_compressed_stream(response.data)
-					#gzipper = gzip.GzipFile(fileobj=compressedStream)
-					#uncompressedStream = gzipper.read()
 					soup = self.create_soup_object(compressedStream)
 					if soup and isinstance(soup, BS4):
 						soups.append(soup)

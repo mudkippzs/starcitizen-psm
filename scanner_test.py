@@ -45,6 +45,12 @@ class ScannerTestcase(unittest.TestCase):
 		list_of_ships = testScanner.get_ship_list()
 		self.assertTrue(list_of_ships)
 
+	def test_check_url_empty(self):
+		testScanner = scanner.Scanner()
+		testScanner.set("url", '')
+		url_valid = testScanner.check_url()
+		self.assertFalse(url_valid)
+
 
 if __name__ == '__main__':
 	unittest.main()

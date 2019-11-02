@@ -28,7 +28,7 @@ def main():
 
 def update():
 	now = time.ctime()
-	print("\nShip Price Update (%s)\n\n" % (now))	
+	print("\n======================\nShip Price Update (%s)\n======================\n\n" % (now))	
 	sys.stdout.flush()
 	SC_Scanner.print_ship_list()
 	sys.stdout.flush()

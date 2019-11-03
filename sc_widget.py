@@ -1,6 +1,6 @@
 import sys
 import random
-from PySide2.QtWidgets import (QApplication, QHeaderView, QLabel,
+from PySide2.QtWidgets import (QApplication, QCheckBox, QComboBox, QHeaderView, QLabel,
                                QPushButton, QTableWidget, QTableWidgetItem,
                                QVBoxLayout, QWidget)
 
@@ -39,22 +39,56 @@ class StarCitizenShipPrices(QWidget):
                 {'name': 'WatchedDemoShip', 'price': '$35.00', 'state': 'In stock!'},
             ]
 
-        self.button = QPushButton("Update Prices")
+        # Create widgets, table and configure them.
+        self.update_button = QPushButton("Update Prices")
+        self.options_button = QPushButton("Configure...")
+        self.refresh_bool = QCheckBox("Automatically refresh?")                
+        self.refresh_freq = QComboBox()
+        self.refresh_freq.addItem("1 hour")
+        self.refresh_freq.addItem("6 hours")
+        self.refresh_freq.addItem("12 hour")
+        self.refresh_freq.addItem("24 hour")
+        self.refresh_freq.addItem("3 days")
+        self.refresh_freq.addItem("7 days")
+        
+
+        self.refresh_bool.nextCheckState()
+        
+        button_width = 150
+        button_height = 20
+
+        combo_box_width = 150
+        combo_box_height = 20
+
+        self.update_button.setStyleSheet("max-width:%dpx;height:%dpx;" % (button_width, button_height))
+        self.options_button.setStyleSheet("max-width:%dpx;height:%dpx;" % (button_width, button_height))
+        self.refresh_freq.setStyleSheet("max-width:%dpx;height:%dpx;" % (combo_box_width, combo_box_height))
+        
         self.tableWidget = QTableWidget(1,3)
         self.tableWidget.setHorizontalHeaderItem(0, QTableWidgetItem('Ship')) 
         self.tableWidget.setHorizontalHeaderItem(1, QTableWidgetItem('Price')) 
         self.tableWidget.setHorizontalHeaderItem(2, QTableWidgetItem('Availability')) 
+        
+        # Size columns
         header = self.tableWidget.horizontalHeader()       
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        
+        # Set layout and add widgets to it
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.tableWidget)
-        self.layout.addWidget(self.button)
+        self.layout.addWidget(self.update_button, 0)
         self.setLayout(self.layout)
 
         # Connecting the signal
-        self.button.clicked.connect(self.refresh)
+        self.update_button.clicked.connect(self.refresh)
+        self.update_button.clicked.connect(self.show_options)
+        
+
+    @Slot()
+    def show_options(self):
+        pass
 
     @Slot()
     def refresh(self):

@@ -7,15 +7,7 @@ from PySide2.QtWidgets import (QApplication, QCheckBox, QComboBox, QHeaderView, 
 from PySide2.QtCore import Slot, Qt
 
 class StarCitizenShipPrices(QWidget):
-    @property
-    def ship_list_table(self):
-        ship_table = []
-        for ship in self.ship_list:
-            row = [ship["name"], ship["price"], ship["state"]]
-            ship_table.append(row)
-
-        return ship_table
-    
+   
     @property
     def ship_list_formatted(self):
         formatted_list = []
@@ -30,18 +22,15 @@ class StarCitizenShipPrices(QWidget):
         QWidget.__init__(self)
 
         if ship_scanner:
-            self.ship_scanner = ship_scanner            
-            self.ship_list = self.ship_scanner.get_ship_list()
-        else:
-            self.ship_list = [
-                {'name': 'DemoShip', 'price': '$15.00', 'state': 'In stock!'},
-                {'name': 'DemoShip', 'price': '$25.00', 'state': 'Sold out!'},
-                {'name': 'WatchedDemoShip', 'price': '$35.00', 'state': 'In stock!'},
-            ]
+            self.ship_scanner = ship_scanner        
 
+        self.draw()        
+        self.refresh()
+
+    def draw(self):
         # Create widgets, table and configure them.
-        self.update_button = QPushButton("Update Prices")
-        self.options_button = QPushButton("Configure...")
+        self.update_button = QPushButton("Refresh")
+        self.options_button = QPushButton("Configure")
         self.refresh_bool = QCheckBox("Automatically refresh?")                
         self.refresh_freq = QComboBox()
         self.refresh_freq.addItem("1 hour")
@@ -49,8 +38,7 @@ class StarCitizenShipPrices(QWidget):
         self.refresh_freq.addItem("12 hour")
         self.refresh_freq.addItem("24 hour")
         self.refresh_freq.addItem("3 days")
-        self.refresh_freq.addItem("7 days")
-        
+        self.refresh_freq.addItem("7 days")        
 
         self.refresh_bool.nextCheckState()
         
@@ -69,22 +57,65 @@ class StarCitizenShipPrices(QWidget):
         self.tableWidget.setHorizontalHeaderItem(1, QTableWidgetItem('Price')) 
         self.tableWidget.setHorizontalHeaderItem(2, QTableWidgetItem('Availability')) 
         
-        # Size columns
+        # Size columns.
         header = self.tableWidget.horizontalHeader()       
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         
-        # Set layout and add widgets to it
+        # Set layout and add widgets to it.
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.tableWidget)
         self.layout.addWidget(self.update_button, 0)
+        # self.layout.addWidget(self.options_button, 1)
         self.setLayout(self.layout)
 
-        # Connecting the signal
+        # Connecting the signal.        
         self.update_button.clicked.connect(self.refresh)
-        self.update_button.clicked.connect(self.show_options)
-        
+        #TODO self.options_button.clicked.connect(self.show_options)
+        # Draw the UI to the screen.
+        self.resize(600, 1400)
+        self.setWindowTitle("Star Citizen Ship Prices")
+        self.show()
+
+
+    def ship_list_table(self):
+        ship_table = []
+        ship_list = self.get_ship_list()
+        for ship in ship_list:
+            row = [ship["name"], ship["price"], ship["state"]]
+            ship_table.append(row)
+
+        return ship_table
+    
+    def clear_table(self):         
+         self.tableWidget.setRowCount(0)
+         return True if self.tableWidget.rowCount() < 1 else False
+
+    def write_to_table(self):
+        row_count = 0        
+        self.tableWidget.setRowCount(len(self.ship_list_table()))
+        for row in self.ship_list_table():
+            self.tableWidget.setItem(row_count, 0, QTableWidgetItem(row[0]))
+            self.tableWidget.setItem(row_count, 1, QTableWidgetItem(row[1]))
+            self.tableWidget.setItem(row_count, 2, QTableWidgetItem(row[2]))
+            row_count = row_count + 1
+        if row_count <= len(self.ship_list_table()):
+            return True
+        else:            
+            return False
+
+    def get_ship_list(self):
+        try:
+            ship_list = self.ship_scanner.get_ship_list()
+        except AttributeError:
+            ship_list = [
+                {'name': 'DemoShip', 'price': '$15.00', 'state': 'In stock!'},
+                {'name': 'DemoShip', 'price': '$25.00', 'state': 'Sold out!'},
+                {'name': 'WatchedDemoShip', 'price': '$35.00', 'state': 'In stock!'},
+            ]
+            
+        return ship_list
 
     @Slot()
     def show_options(self):
@@ -92,13 +123,15 @@ class StarCitizenShipPrices(QWidget):
 
     @Slot()
     def refresh(self):
-        row_count = 0
-        self.tableWidget.setRowCount(len(self.ship_list_table))
-        for row in self.ship_list_table:
-            self.tableWidget.setItem(row_count, 0, QTableWidgetItem(row[0]))
-            self.tableWidget.setItem(row_count, 1, QTableWidgetItem(row[1]))
-            self.tableWidget.setItem(row_count, 2, QTableWidgetItem(row[2]))
-            row_count = row_count + 1
+        self.update_button.setEnabled(False)
+        self.update_button.setText("Getting prices...")
+        if self.clear_table():
+            self.write_to_table()
+        else:
+            print("Error writing to table!")
+        self.update_button.setEnabled(True)
+        self.update_button.setText("Refresh")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -15,7 +15,6 @@ class Scanner:
 	attrs = {}
 	#Setup urllib3 PoolManager
 	http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED',ca_certs=certifi.where())
-	ship_list = []
 	watch_list = ['Caterpillar','Prospector']
 
 	def set(self, attr, val):
@@ -70,7 +69,6 @@ class Scanner:
 			return False
 
 	def get_ship_list(self):
-
 		if self.check_url():
 			pages = self.get_html()
 			ship_names = self.extract_ships(pages)
@@ -91,6 +89,7 @@ class Scanner:
 		return name
 
 	def extract_ships(self, pages):
+		ship_list = []
 		for html in pages:
 			if isinstance(html, BS4):
 				ship_blocks = html.find_all("div",{"class": "product-item"})			
@@ -100,17 +99,17 @@ class Scanner:
 						price = ship.find("div",{"class": "price"}).text.strip()
 						state = ship.find("span",{"class": "state"}).text.strip()
 						formatted_state = self.format_state(state)
-						self.ship_list.append({'name': name, 'price': price, 'state': state})
+						ship_list.append({'name': name, 'price': price, 'state': state})
 					except:
 						raise
 
-		return self.ship_list
+		return ship_list
 
 
 	def print_ship_list(self):
-		self.get_ship_list()
+		ship_list = self.get_ship_list()
 
-		for ship in self.ship_list:			
+		for ship in ship_list:			
 			print("%s\n\t%s\t%s" % (ship['name'], ship['price'], ship['state']))
 
 

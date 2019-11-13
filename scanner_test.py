@@ -52,5 +52,5 @@ class ScannerTestcase(unittest.TestCase):
 		self.assertFalse(url_valid)
 
 
-if __name__ == '__main__'
-:	unittest.main()
+if __name__ == '__main__':
+	unittest.main()
